@@ -50,6 +50,7 @@ public class Main {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         ChannelPipeline pipeline = socketChannel.pipeline();
+
                         pipeline.addLast(
                                 new LineBasedFrameDecoder(Integer.MAX_VALUE),
                                 new MessageDecoder(),

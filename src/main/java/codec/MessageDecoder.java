@@ -30,7 +30,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
             }
         } catch (Exception e) {
             channelHandlerContext.close();
-            throw e;
+            e.printStackTrace();
         }
     }
 }

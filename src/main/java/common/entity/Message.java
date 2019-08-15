@@ -1,22 +1,14 @@
 package common.entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class Message implements Serializable {
 
     private Type type;
     private String path;
     private FileBlock fileBlock;
-    private String[] fileList;
-    private Code code;
-
-    public Code getCode() {
-        return code;
-    }
-
-    public void setCode(Code code) {
-        this.code = code;
-    }
+    private ArrayList<FileInfo> fileInfoList;
 
     public Type getType() {
         return type;
@@ -42,11 +34,11 @@ public class Message implements Serializable {
         this.fileBlock = fileBlock;
     }
 
-    public String[] getFileList() {
-        return fileList;
+    public ArrayList<FileInfo> getFileInfoList() {
+        return fileInfoList;
     }
 
-    public void setFileList(String[] fileList) {
-        this.fileList = fileList;
+    public void setFileInfoList(ArrayList<FileInfo> fileInfoList) {
+        this.fileInfoList = fileInfoList;
     }
 }
