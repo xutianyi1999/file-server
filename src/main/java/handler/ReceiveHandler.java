@@ -1,33 +1,53 @@
 package handler;
 
-import codec.MessageEncoder;
-import common.entity.Message;
-import common.entity.Type;
-import handler.model.DownloadHandler;
-import handler.model.FileListHandler;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.string.StringEncoder;
-import io.netty.handler.stream.ChunkedWriteHandler;
 
-public class ReceiveHandler extends SimpleChannelInboundHandler<Message> {
+import java.util.Arrays;
+
+import static common.constants.MessageConf.*;
+import static server_common.ServerSessions.sessions;
+
+public class ReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
-    protected void channelRead0(ChannelHandlerContext channelHandlerContext, Message message) throws Exception {
-        if (message.getType() == Type.DOWNLOAD) {
-            channelHandlerContext.pipeline().addLast(
-                    new StringEncoder(),
-                    new ChunkedWriteHandler(),
-                    new DownloadHandler()
-            );
-            channelHandlerContext.fireChannelRead(message);
-        } else if (message.getType() == Type.UPDATE) {
-        } else if (message.getType() == Type.SELECT) {
-            channelHandlerContext.pipeline().addLast(
-                    new MessageEncoder(),
-                    new FileListHandler()
-            );
-            channelHandlerContext.fireChannelRead(message);
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteBuf message) throws Exception {
+        short keyType = message.readShort();
+
+        if (keyType == CONNECT) {
+            StringBuilder key = new StringBuilder();
+
+            while (message.isReadable(2)) {
+                char c = message.readChar();
+
+                if (c == CONNECT_KEY_DELIMITER) {
+                    break;
+                } else {
+                    key.append(c);
+                }
+            }
+            // TODO 待
+        } else if (keyType == SESSION) {
+            byte[] session = new byte[SESSION_LENGTH];
+            message.readBytes(session);
+
+            boolean flag = false;
+
+            for (byte[] sessionTemp : sessions) {
+                if (Arrays.equals(sessionTemp, session)) {
+                    flag = true;
+                    break;
+                }
+            }
+
+            if (flag) {
+                channelHandlerContext.fireChannelRead(message);
+            } else {
+                channelHandlerContext.close();
+            }
+        } else {
+            channelHandlerContext.close();
         }
     }
 }

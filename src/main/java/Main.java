@@ -1,4 +1,3 @@
-import codec.MessageDecoder;
 import handler.ReceiveHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -11,9 +10,11 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.LineBasedFrameDecoder;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+
+import static common.constants.MessageConf.MESSAGE_DELIMITER;
 
 public class Main {
 
@@ -48,12 +49,11 @@ public class Main {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
 
                     @Override
-                    protected void initChannel(SocketChannel socketChannel) throws Exception {
+                    protected void initChannel(SocketChannel socketChannel) {
                         ChannelPipeline pipeline = socketChannel.pipeline();
 
                         pipeline.addLast(
-                                new LineBasedFrameDecoder(Integer.MAX_VALUE),
-                                new MessageDecoder(),
+                                new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, socketChannel.alloc().buffer().writeBytes(MESSAGE_DELIMITER)),
                                 new ReceiveHandler()
                         );
                     }
