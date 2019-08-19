@@ -7,16 +7,17 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import java.util.Arrays;
 
 import static common.constants.MessageConf.*;
-import static server_common.ServerSessions.sessions;
+import static server_common.ServerCommons.keys;
+import static server_common.ServerCommons.sessions;
 
-public class ReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
+public class SecurityHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteBuf message) throws Exception {
         short keyType = message.readShort();
 
         if (keyType == CONNECT) {
-            StringBuilder key = new StringBuilder();
+            StringBuilder stringBuilderKey = new StringBuilder();
 
             while (message.isReadable(2)) {
                 char c = message.readChar();
@@ -24,10 +25,25 @@ public class ReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 if (c == CONNECT_KEY_DELIMITER) {
                     break;
                 } else {
-                    key.append(c);
+                    stringBuilderKey.append(c);
                 }
             }
-            // TODO 待
+
+            String fullKey = stringBuilderKey.toString();
+            boolean flag = false;
+
+            for (String key : keys) {
+                if (key.equals(fullKey)) {
+                    flag = true;
+                    break;
+                }
+            }
+
+            if (flag) {
+                channelHandlerContext.fireChannelRead(message);
+            } else {
+                channelHandlerContext.close();
+            }
         } else if (keyType == SESSION) {
             byte[] session = new byte[SESSION_LENGTH];
             message.readBytes(session);
