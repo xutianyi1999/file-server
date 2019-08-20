@@ -1,9 +1,9 @@
 import com.alibaba.fastjson.JSON;
 import handler.SecurityHandler;
+import handler.TaskHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
@@ -12,8 +12,10 @@ import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import server_common.FileServerConfigEntity;
 import server_common.ServerCommons;
 
@@ -21,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import static common.constants.MessageConf.MESSAGE_DELIMITER;
+import static server_common.ServerCommons.*;
 
 public class Main {
 
@@ -67,12 +70,14 @@ public class Main {
 
                     @Override
                     protected void initChannel(SocketChannel socketChannel) {
-                        ChannelPipeline pipeline = socketChannel.pipeline();
-
-                        pipeline.addLast(
-                                new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, socketChannel.alloc().buffer().writeBytes(MESSAGE_DELIMITER)),
-                                new SecurityHandler()
-                        );
+                        socketChannel.pipeline()
+                                .addLast(BYTE_ENCODER, new ByteArrayEncoder())
+                                .addLast(CHUNKED_HANDLER, new ChunkedWriteHandler())
+                                .addLast(DELIMIT_DECODER, new DelimiterBasedFrameDecoder(
+                                        Integer.MAX_VALUE, socketChannel.alloc().buffer().writeBytes(MESSAGE_DELIMITER))
+                                )
+                                .addLast(SECURITY_HANDLER, new SecurityHandler())
+                                .addLast(TASK_HANDLER, new TaskHandler());
                     }
                 });
 

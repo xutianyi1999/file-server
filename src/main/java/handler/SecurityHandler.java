@@ -3,67 +3,34 @@ package handler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import server_common.ServerCommons;
 
-import java.util.Arrays;
-
-import static common.constants.MessageConf.*;
-import static server_common.ServerCommons.keys;
-import static server_common.ServerCommons.sessions;
+import java.nio.charset.StandardCharsets;
 
 public class SecurityHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
-    protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteBuf message) throws Exception {
-        short keyType = message.readShort();
+    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf message) {
+        System.out.println("security");
+        byte[] bytes = new byte[message.readableBytes()];
+        message.readBytes(bytes);
+        String key = new String(bytes, StandardCharsets.UTF_8);
 
-        if (keyType == CONNECT) {
-            StringBuilder stringBuilderKey = new StringBuilder();
+        boolean flag = false;
 
-            while (message.isReadable(2)) {
-                char c = message.readChar();
-
-                if (c == CONNECT_KEY_DELIMITER) {
-                    break;
-                } else {
-                    stringBuilderKey.append(c);
-                }
+        for (String tempKey : ServerCommons.keys) {
+            if (tempKey.equals(key)) {
+                flag = true;
+                break;
             }
+        }
 
-            String fullKey = stringBuilderKey.toString();
-            boolean flag = false;
-
-            for (String key : keys) {
-                if (key.equals(fullKey)) {
-                    flag = true;
-                    break;
-                }
-            }
-
-            if (flag) {
-                channelHandlerContext.fireChannelRead(message);
-            } else {
-                channelHandlerContext.close();
-            }
-        } else if (keyType == SESSION) {
-            byte[] session = new byte[SESSION_LENGTH];
-            message.readBytes(session);
-
-            boolean flag = false;
-
-            for (byte[] sessionTemp : sessions) {
-                if (Arrays.equals(sessionTemp, session)) {
-                    flag = true;
-                    break;
-                }
-            }
-
-            if (flag) {
-                channelHandlerContext.fireChannelRead(message);
-            } else {
-                channelHandlerContext.close();
-            }
+        if (flag) {
+            ctx.write(ctx.channel().remoteAddress().toString().getBytes(StandardCharsets.UTF_8));
+            ctx.writeAndFlush('\n');
+            ctx.pipeline().remove(this);
         } else {
-            channelHandlerContext.close();
+            ctx.close();
         }
     }
 }

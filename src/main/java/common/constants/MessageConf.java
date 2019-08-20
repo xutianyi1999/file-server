@@ -4,20 +4,15 @@ import java.nio.charset.StandardCharsets;
 
 public final class MessageConf {
 
-    // Key type
-    public static short CONNECT = 10000;
-    public static short SESSION = 10001;
-
-    // Length
-    public static int SESSION_LENGTH = 16;
+    // status
+    public static short SUCCESS = 10001;
+    public static short ERROR = 10000;
 
     // Basic type
     public static short DOWNLOAD = 10010;
     public static short UPDATE = 10011;
     public static short FILE_LIST = 10012;
-    public static short FILE_BLOCK = 10013;
 
     // Message type delimiter
     public static byte[] MESSAGE_DELIMITER = "34c9Vo9eEG0iBwe0".getBytes(StandardCharsets.UTF_8);
-    public static char CONNECT_KEY_DELIMITER = '\n';
 }
