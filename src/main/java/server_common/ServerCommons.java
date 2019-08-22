@@ -11,6 +11,7 @@ public class ServerCommons {
     public static final String TASK_HANDLER = "taskHandler";
     public static final String CHUNKED_HANDLER = "chunkedHandler";
     public static final String BYTE_ENCODER = "byteEncoder";
+    public static final String UPDATE_HANDLER = "updateHandler";
 
     public static final DefaultEventExecutorGroup DEFAULT_EVENT_EXECUTOR_GROUP = new DefaultEventExecutorGroup(16);
 }

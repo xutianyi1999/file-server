@@ -1,7 +1,5 @@
 package common.constants;
 
-import java.nio.charset.StandardCharsets;
-
 public final class MessageConf {
 
     // status
@@ -12,7 +10,4 @@ public final class MessageConf {
     public static short DOWNLOAD = 10010;
     public static short UPDATE = 10011;
     public static short FILE_LIST = 10012;
-
-    // Message type delimiter
-    public static byte[] MESSAGE_DELIMITER = "34c9Vo9eEG0iBwe0".getBytes(StandardCharsets.UTF_8);
 }

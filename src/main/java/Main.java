@@ -11,7 +11,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
@@ -22,7 +22,6 @@ import server_common.ServerCommons;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static common.constants.MessageConf.MESSAGE_DELIMITER;
 import static server_common.ServerCommons.*;
 
 public class Main {
@@ -73,9 +72,7 @@ public class Main {
                         socketChannel.pipeline()
                                 .addLast(BYTE_ENCODER, new ByteArrayEncoder())
                                 .addLast(CHUNKED_HANDLER, new ChunkedWriteHandler())
-                                .addLast(DELIMIT_DECODER, new DelimiterBasedFrameDecoder(
-                                        Integer.MAX_VALUE, socketChannel.alloc().buffer().writeBytes(MESSAGE_DELIMITER))
-                                )
+                                .addLast(DELIMIT_DECODER, new LineBasedFrameDecoder(1024))
                                 .addLast(SECURITY_HANDLER, new SecurityHandler())
                                 .addLast(TASK_HANDLER, new TaskHandler());
                     }
