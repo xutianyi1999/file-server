@@ -7,10 +7,12 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import static common.constants.MessageConf.DOWNLOAD;
 import static common.constants.MessageConf.SUCCESS;
-import static common.constants.MessageConf.UPDATE;
 
 public class Test {
+
+    private ByteBuffer fileLength;
 
     public static void main(String[] args) throws Exception {
         byte[] statusBytes = new byte[5];
@@ -28,35 +30,18 @@ public class Test {
 
         if (!Arrays.equals(statusBytes, SUCCESS)) {
             return;
+        } else {
+            System.out.println("true");
         }
 
         ByteBuffer message = ByteBuffer.allocate(1024);
-        RandomAccessFile randomAccessFile = new RandomAccessFile(new File("C:\\Users\\xutia\\Downloads\\confluent-5.3.0-2.12.tar.gz"), "rw");
-        long fileLength = randomAccessFile.length();
-        message.put(UPDATE);
-        message.putLong(fileLength);
+        message.put(DOWNLOAD);
         message.put("confluent-5.3.0-2.12.tar.gz\n".getBytes(StandardCharsets.UTF_8));
         socketChannel.write(message.flip());
-
-        socketChannel.read(status.flip().clear());
-        status.flip().get(statusBytes);
-        if (!Arrays.equals(statusBytes, SUCCESS)) {
-            return;
-        }
-
-        FileChannel fileChannel = randomAccessFile.getChannel();
-        long position = 0;
-
-        while (position < fileLength) {
-            position += fileChannel.transferTo(position, fileLength, socketChannel);
-        }
-
-        socketChannel.read(status.flip().clear());
-        status.flip().get(statusBytes);
-
-        if (Arrays.equals(statusBytes, SUCCESS)) {
-            System.out.println("true");
-        }
-        socketChannel.close();
+        ByteBuffer fileLength = ByteBuffer.allocate(8);
+        socketChannel.read(fileLength);
+        FileChannel fileChannel = new RandomAccessFile(new File("C:\\Users\\xutia\\Desktop\\download\\test.tar.gz"), "rw").getChannel();
+        fileChannel.transferFrom(socketChannel, 0, fileLength.flip().getLong());
+        socketChannel.read(fileLength);
     }
 }

@@ -31,12 +31,10 @@ public class TaskHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
 
                 long fileLength = randomAccessFile.length();
-//                ByteBuf byteBuf = ctx.alloc().buffer().writeLong(fileLength);
-//                byte[] bytes = new byte[byteBuf.readableBytes()];
-//                System.out.println(byteBuf.readableBytes());
-//                byteBuf.readBytes(bytes).release();
-                ctx.write(fileLength);
-
+                ByteBuf byteBuf = ctx.alloc().buffer().writeLong(fileLength);
+                byte[] bytes = new byte[byteBuf.readableBytes()];
+                byteBuf.readBytes(bytes).release();
+                ctx.write(bytes);
                 ctx.writeAndFlush(new DefaultFileRegion(randomAccessFile.getChannel(), 0, fileLength)).addListener((ChannelFutureListener) future -> randomAccessFile.close());
             } else if (Arrays.equals(type, UPDATE)) {
                 long fileLength;
@@ -75,6 +73,7 @@ public class TaskHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     private File getFile(ByteBuf message) {
         byte[] bytes = new byte[message.readableBytes()];
+        message.readBytes(bytes);
         File file = new File("./", new String(bytes, StandardCharsets.UTF_8));
 
         if (file.isFile()) {
