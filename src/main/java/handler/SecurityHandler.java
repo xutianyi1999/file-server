@@ -1,5 +1,6 @@
 package handler;
 
+import common.constants.MessageConf;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -28,8 +29,7 @@ public class SecurityHandler extends SimpleChannelInboundHandler<ByteBuf> {
         }
 
         if (flag) {
-            ctx.write(ctx.channel().remoteAddress().toString().getBytes(StandardCharsets.UTF_8));
-            ctx.writeAndFlush("\n".getBytes(StandardCharsets.UTF_8)).addListener((ChannelFutureListener) future -> ctx.pipeline().remove(SECURITY_HANDLER));
+            ctx.writeAndFlush(MessageConf.SUCCESS).addListener((ChannelFutureListener) future -> ctx.pipeline().remove(SECURITY_HANDLER));
         } else {
             ctx.close();
         }

@@ -1,36 +1,62 @@
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
+import java.io.File;
+import java.io.RandomAccessFile;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.util.Arrays;
+
+import static common.constants.MessageConf.SUCCESS;
+import static common.constants.MessageConf.UPDATE;
 
 public class Test {
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
-        Socket socket = new Socket("127.0.0.1", 19998);
-        OutputStream outputStream = socket.getOutputStream();
-        outputStream.write("123456\n".getBytes(StandardCharsets.UTF_8));
-        InputStream inputStream = socket.getInputStream();
-        ArrayList<Byte> bytes = new ArrayList<>();
+    public static void main(String[] args) throws Exception {
+        byte[] statusBytes = new byte[5];
+        SocketChannel socketChannel = SocketChannel.open(new InetSocketAddress("127.0.0.1", 19998));
 
-        long l = System.currentTimeMillis();
-        while (true) {
-            byte read = (byte) inputStream.read();
-            if (read == '\n') {
-                break;
-            } else {
-                bytes.add(read);
-            }
+        //连接
+        byte[] key = "123456\n".getBytes(StandardCharsets.UTF_8);
+        socketChannel.write(ByteBuffer.wrap(key));
+
+        //返回
+        ByteBuffer status = ByteBuffer.allocate(5);
+        socketChannel.read(status);
+
+        status.flip().get(statusBytes);
+
+        if (!Arrays.equals(statusBytes, SUCCESS)) {
+            return;
         }
 
-        byte[] bytes2 = new byte[bytes.size()];
+        ByteBuffer message = ByteBuffer.allocate(1024);
+        RandomAccessFile randomAccessFile = new RandomAccessFile(new File("C:\\Users\\xutia\\Downloads\\confluent-5.3.0-2.12.tar.gz"), "rw");
+        long fileLength = randomAccessFile.length();
+        message.put(UPDATE);
+        message.putLong(fileLength);
+        message.put("confluent-5.3.0-2.12.tar.gz\n".getBytes(StandardCharsets.UTF_8));
+        socketChannel.write(message.flip());
 
-        for (int i = 0; i < bytes2.length; i++) {
-            bytes2[i] = bytes.get(i);
+        socketChannel.read(status.flip().clear());
+        status.flip().get(statusBytes);
+        if (!Arrays.equals(statusBytes, SUCCESS)) {
+            return;
         }
-        System.out.println(System.currentTimeMillis() - l);
-        String s = new String(bytes2);
-        System.out.println(s);
+
+        FileChannel fileChannel = randomAccessFile.getChannel();
+        long position = 0;
+
+        while (position < fileLength) {
+            position += fileChannel.transferTo(position, fileLength, socketChannel);
+        }
+
+        socketChannel.read(status.flip().clear());
+        status.flip().get(statusBytes);
+
+        if (Arrays.equals(statusBytes, SUCCESS)) {
+            System.out.println("true");
+        }
+        socketChannel.close();
     }
 }

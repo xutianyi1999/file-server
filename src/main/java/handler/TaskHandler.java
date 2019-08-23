@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import static common.constants.MessageConf.*;
 import static server_common.ServerCommons.*;
@@ -16,10 +17,11 @@ public class TaskHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        if (msg.isReadable(2)) {
-            short type = msg.readShort();
+        if (msg.isReadable(MESSAGE_HEAD_LENGTH)) {
+            byte[] type = new byte[MESSAGE_HEAD_LENGTH];
+            msg.readBytes(type);
 
-            if (type == DOWNLOAD) {
+            if (Arrays.equals(type, DOWNLOAD)) {
                 File file = getFile(msg);
 
                 if (file == null) {
@@ -36,7 +38,7 @@ public class TaskHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 ctx.write(fileLength);
 
                 ctx.writeAndFlush(new DefaultFileRegion(randomAccessFile.getChannel(), 0, fileLength)).addListener((ChannelFutureListener) future -> randomAccessFile.close());
-            } else if (type == UPDATE) {
+            } else if (Arrays.equals(type, UPDATE)) {
                 long fileLength;
 
                 if (msg.isReadable(8)) {
@@ -48,21 +50,20 @@ public class TaskHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 byte[] bytes = new byte[msg.readableBytes()];
                 msg.readBytes(bytes);
                 String filePath = new String(bytes, StandardCharsets.UTF_8);
+                RandomAccessFile accessFile = getAccessFile(filePath);
+
+                if (accessFile == null) {
+                    return;
+                }
 
                 ctx.writeAndFlush(SUCCESS).addListener((ChannelFutureListener) future -> {
-                    RandomAccessFile accessFile = getAccessFile(filePath);
-
-                    if (accessFile == null) {
-                        return;
-                    }
-
                     ChannelPipeline pipeline = ctx.pipeline();
                     pipeline.remove(TASK_HANDLER);
                     pipeline.remove(DELIMIT_DECODER);
                     pipeline.addLast(DEFAULT_EVENT_EXECUTOR_GROUP, UPDATE_HANDLER, new UpdateHandler(accessFile, fileLength));
                 });
 
-            } else if (type == FILE_LIST) {
+            } else if (Arrays.equals(type, FILE_LIST)) {
 
             } else {
                 ctx.close();
