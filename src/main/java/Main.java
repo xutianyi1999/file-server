@@ -15,7 +15,6 @@ import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.stream.ChunkedWriteHandler;
 import server_common.FileServerConfigEntity;
 import server_common.ServerCommons;
 
@@ -71,7 +70,6 @@ public class Main {
                     protected void initChannel(SocketChannel socketChannel) {
                         socketChannel.pipeline()
                                 .addLast(BYTE_ENCODER, new ByteArrayEncoder())
-                                .addLast(CHUNKED_HANDLER, new ChunkedWriteHandler())
                                 .addLast(DELIMIT_DECODER, new LineBasedFrameDecoder(1024))
                                 .addLast(SECURITY_HANDLER, new SecurityHandler())
                                 .addLast(TASK_HANDLER, new TaskHandler());
